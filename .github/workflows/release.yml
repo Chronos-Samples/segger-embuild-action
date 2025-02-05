@@ -1,0 +1,30 @@
+name: Release Segger Build Action
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: Release the GitHub Action
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create release assets
+        id: create_release_assets
+        run: |
+          echo "version=${GITHUB_REF_NAME#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          body: |
+            - **Docker Image**: `maxmushkin/segger`
+            - See the README for detailed usage instructions.
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

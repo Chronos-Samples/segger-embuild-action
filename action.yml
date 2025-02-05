@@ -1,0 +1,80 @@
+name: "Segger Build Action"
+description: "Runs a build using the Segger Docker image"
+author: "Bogdan Kosarevskyi <bogdan.kosarevskyi@gmail.com>"
+
+inputs:
+  config:
+    description: "Build configuration (e.g., 'Debug', 'Release')"
+    required: true
+  D:
+    description: "Define macros with optional values (e.g., '-D MACRO=VALUE'). Can be provided as a list with `,` divider"
+    required: false
+    default: ""
+  property:
+    description: "Set project properties (e.g., '-property NAME=VALUE'). Can be provided multiple times."
+    required: false
+    default: ""
+  projectName:
+    description: "Name of the project folder"
+    required: true
+  projectPath:
+    description: "Path to the project within the project folder"
+    required: true
+  projectFile:
+    description: "Name of the project file to build"
+    required: true
+  seggerVersion:
+    description: "Segger IDE version"
+    required: false
+    default: "5.40"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Initializer
+      shell: bash
+      run: |
+        CONFIG="${{ inputs.config }}"
+        PROJECT_NAME="${{ inputs.projectName }}"
+        PROJECT_PATH="${{ inputs.projectPath }}"
+        PROJECT_FILE="${{ inputs.projectFile }}"
+        D="${{ inputs.D }}"
+        PROPS="${{ inputs.property }}"
+        
+        if [[ -n "$D" ]]; then
+          D_ARGS=""
+          for MACRO in $(echo "$D" | tr ',' ' '); do
+            D_ARGS="$D_ARGS -D $MACRO"
+          done
+        fi
+
+        if [[ -n "$PROPS" ]]; then
+          PROPERTY_ARGS=""
+          for PROP in $(echo "$PROPS" | tr ',' ' '); do
+            PROPERTY_ARGS="$PROPERTY_ARGS -property $PROP"
+          done
+        fi
+
+        COMMAND="cd $PROJECT_NAME/$PROJECT_PATH && emBuild -config $CONFIG"
+        if [[ -n "$D_ARGS" ]]; then
+          COMMAND="$COMMAND $D_ARGS"
+        fi
+        if [[ -n "$PROPERTY_ARGS" ]]; then
+          COMMAND="$COMMAND $PROPERTY_ARGS"
+        fi
+        COMMAND="$COMMAND $PROJECT_FILE"
+
+        # Export to environment for the next step
+        echo "COMMAND=$COMMAND" >> $GITHUB_ENV
+
+    - name: Builder
+      shell: bash
+      run: |
+        docker run --rm -v "$(pwd):/sdk/examples/projects/${{ inputs.projectName }}" \
+          maxmushkin/segger:${{ inputs.seggerVersion }} \
+          bash -c "${COMMAND}"
+
+    - name: Finalizer
+      shell: bash
+      run: |
+        echo "You can pick up your files in the place you set up ;)"
