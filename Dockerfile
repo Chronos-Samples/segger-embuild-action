@@ -21,6 +21,9 @@ RUN wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/g
 RUN wget https://developer.nordicsemi.com/.pc-tools/nrfutil/x64-linux/nrfutil && \
     mv nrfutil /usr/local/bin/ && \
     chmod +x /usr/local/bin/nrfutil
+RUN wget https://github.com/NordicSemiconductor/pc-nrfutil/releases/download/v6.1.7/nrfutil-linux && \
+    mv nrfutil-linux /usr/local/bin/nrfutil-legacy && \
+    chmod +x /usr/local/bin/nrfutil-legacy
 RUN wget https://nsscprodmedia.blob.core.windows.net/prod/software-and-other-downloads/sdks/nrf5/binaries/nrf5_sdk_17.1.0_ddde560.zip && \
     unzip nrf5_sdk_17.1.0_ddde560.zip && \
     mv nRF5_SDK_17.1.0_ddde560/ /sdk && \
@@ -42,8 +45,10 @@ RUN test -f /sdk/external/micro-ecc/nrf52hf_armgcc/armgcc/micro_ecc_lib_nrf52.a 
 
 FROM base AS builder
 COPY --from=deps /usr/local/gcc-arm-none-eabi /usr/local/gcc-arm-none-eabi
-COPY --from=deps /usr/local/segger /usr/local/segger
+COPY --from=deps --chown=ubuntu:ubuntu /usr/local/segger /usr/local/segger
 COPY --from=deps /usr/local/bin/nrfutil /usr/local/bin/nrfutil
-COPY --from=deps /sdk /sdk
+COPY --from=deps /usr/local/bin/nrfutil-legacy /usr/local/bin/nrfutil-legacy
+COPY --from=deps --chown=ubuntu:ubunt /sdk /sdk
+USER ubuntu
 ENV PATH="$PATH:/usr/local/segger/bin"
 WORKDIR /sdk/examples/projects
