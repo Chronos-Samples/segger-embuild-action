@@ -45,10 +45,9 @@ RUN test -f /sdk/external/micro-ecc/nrf52hf_armgcc/armgcc/micro_ecc_lib_nrf52.a 
 
 FROM base AS builder
 COPY --from=deps /usr/local/gcc-arm-none-eabi /usr/local/gcc-arm-none-eabi
-COPY --from=deps --chown=ubuntu:ubuntu /usr/local/segger /usr/local/segger
+COPY --from=deps /usr/local/segger /usr/local/segger
 COPY --from=deps /usr/local/bin/nrfutil /usr/local/bin/nrfutil
 COPY --from=deps /usr/local/bin/nrfutil-legacy /usr/local/bin/nrfutil-legacy
-COPY --from=deps --chown=ubuntu:ubunt /sdk /sdk
-USER ubuntu
+COPY --from=deps /sdk /sdk
 ENV PATH="$PATH:/usr/local/segger/bin"
 WORKDIR /sdk/examples/projects
